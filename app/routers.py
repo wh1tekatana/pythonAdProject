@@ -41,7 +41,7 @@ def get_db():
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
+        detail="Не удалось проверить учетные данные",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
@@ -74,6 +74,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+#РЕГИСТРАЦИЯ ПОЛЬЗОВАТЕЛЯ
 @router.post("/sign-up", response_model=UserBase)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
     hashed_password = pwd_context.hash(user.password)
@@ -83,13 +84,14 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(db_user)
     return db_user
 
+#АВТОРИЗАЦИЯ .. ВОЗВРАЩАЕТ ТОКЕН
 @router.post("/sign-in", response_model=Token)
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Неверное имя или пароль",
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -98,6 +100,8 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+
+#ДОБАВИТЬ ОБЬЯВЛЕНИЕ .. ТРЕБУЕТСЯ ТОКЕН
 @router.post("/advertisements/", response_model=AdvertisementBase)
 def create_advertisement(advertisement: AdvertisementBase, db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
@@ -122,11 +126,27 @@ def create_advertisement(advertisement: AdvertisementBase, db: Session = Depends
     db.refresh(db_advertisement)
     return db_advertisement
 
+#HOME PAGE
 @router.get("/")
 def main():
     return FileResponse("templates/index.html")
 
 
+#УДАЛЕНИЕ ОБЬЯВЛЕНИЯ .. УДАЛИТЬ ОБЬЯВЛЕНИЕ МОЖЕТ ТОЛЬКО СОЗДАТЕЛЬ
+@router.delete("/advertisements/{advertisement_id}")
+def delete_advertisement(advertisement_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    advertisement = db.query(Advertisement).filter(Advertisement.id == advertisement_id).first()
+    if advertisement is None:
+        raise HTTPException(status_code=404, detail="Объявление не найдено")
+    
+    if advertisement.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="У вас нет прав на удаление этого объявления")
+    
+    db.delete(advertisement)
+    db.commit()
+    return {"detail": "Объявление успешно удалено"}
+
+#ПОИСК ПОЛЬЗОВАТЕЛЯ
 @router.get("/users/{user_id}")
 def read_user(user_id: int, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
@@ -134,6 +154,7 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Пользователь  не найден")
     return user
 
+#ПОИСК КОНКРЕТНОГО ОБЬЯВЛЕНИЯ ПО ID
 @router.get("/advertisements/{advertisement_id}")
 def read_advertisement(advertisement_id: int, db: Session = Depends(get_db)):
     advertisement = db.query(Advertisement).filter(Advertisement.id == advertisement_id).first()
@@ -141,7 +162,43 @@ def read_advertisement(advertisement_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Обьявление не найдено")
     return advertisement
 
+#ПОЛУЧИТЬ СПИСОК ВСЕХ ОБЬЯВЛЕНИЙ
 @router.get("/advertisements/")
 def read_advertisements(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     advertisements = db.query(Advertisement).all()
+    return advertisements
+
+
+#РЕДАКТИРОВАНИЕ ОБЬЯВЛЕНИЙ .. РЕДАКТИРОВАТЬ МОЖЕТ ТОЛЬКО СОЗДАТЕЛЬ .. ТРЕБУЕТСЯ ТОКЕН
+@router.put("/advertisements/{advertisement_id}", response_model=AdvertisementBase)
+def update_advertisement(advertisement_id: int, updated_advertisement: AdvertisementBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    advertisement = db.query(Advertisement).filter(Advertisement.id == advertisement_id).first()
+    if advertisement is None:
+        raise HTTPException(status_code=404, detail="Объявление не найдено")
+    
+    if advertisement.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="У вас нет прав на редактирование этого объявления")
+    
+    advertisement.title = updated_advertisement.title
+    advertisement.description = updated_advertisement.description
+    db.commit()
+    db.refresh(advertisement)
+    return advertisement
+
+
+# ПОИСК ОБЬЯВЛЕНИЙ КОНКРЕТНОГО ПОЛЬЗОВАТЕЛЯ
+@router.get("/users/{user_id}/advertisements/")
+def read_user_advertisements(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    advertisements = db.query(Advertisement).filter(Advertisement.owner_id == user_id).all()
+    return advertisements
+
+
+#ПОИСК ОБЬЯВЛЕНИЯ ПО КЛЮЧЕВЫМ СЛОВАМ
+@router.get("/advertisements/search/")
+def search_advertisements(query: str, db: Session = Depends(get_db)):
+    search = f"%{query}%"
+    advertisements = db.query(Advertisement).filter(Advertisement.title.ilike(search)).all()
     return advertisements
