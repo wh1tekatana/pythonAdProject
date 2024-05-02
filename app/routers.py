@@ -120,7 +120,15 @@ def create_advertisement(advertisement: AdvertisementBase, db: Session = Depends
     user = db.query(User).filter(User.username == token_data.username).first()
     if user is None:
         raise credentials_exception
-    db_advertisement = Advertisement(title=advertisement.title, description=advertisement.description, owner_id=user.id)
+    db_advertisement = Advertisement(
+        title=advertisement.title, 
+        description=advertisement.description, 
+        type=advertisement.type,  # Новое поле типа
+        category=advertisement.category,  # Новое поле категории
+        price=advertisement.price,  # Новое поле цены
+        location=advertisement.location,  # Новое поле локации
+        owner_id=user.id
+        )
     db.add(db_advertisement)
     db.commit()
     db.refresh(db_advertisement)
@@ -181,6 +189,10 @@ def update_advertisement(advertisement_id: int, updated_advertisement: Advertise
     
     advertisement.title = updated_advertisement.title
     advertisement.description = updated_advertisement.description
+    advertisement.type = updated_advertisement.type  # Новое поле типа
+    advertisement.category = updated_advertisement.category  # Новое поле категории
+    advertisement.price = updated_advertisement.price  # Новое поле цены
+    advertisement.location = updated_advertisement.location
     db.commit()
     db.refresh(advertisement)
     return advertisement

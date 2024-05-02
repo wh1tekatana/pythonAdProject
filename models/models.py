@@ -21,4 +21,8 @@ class Advertisement(Base):
     title = Column(String, index=True)
     description = Column(String)
     owner_id = Column(Integer)
+    type = Column(String)  # Новое поле типа
+    category = Column(String)  # Новое поле категории
+    price = Column(String)  # Новое поле цены
+    location = Column(String)  # Новое поле локации
     created_at = Column(DateTime, server_default=func.now())

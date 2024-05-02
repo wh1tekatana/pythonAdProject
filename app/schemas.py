@@ -1,4 +1,3 @@
-# schemas.py
 from pydantic import BaseModel
 from typing import Optional
 
@@ -23,11 +22,19 @@ class TokenData(BaseModel):
 class AdvertisementBase(BaseModel):
     title: str
     description: str
+    type: str  # Новое поле типа
+    category: str  # Новое поле категории
+    price: str  # Новое поле цены
+    location: str  # Новое поле локации
 
 class AdvertisementOut(BaseModel):
     id: int
     title: str
     description: str
+    type: str  # Новое поле типа
+    category: str  # Новое поле категории
+    price: str  # Новое поле цены
+    location: str  # Новое поле локации
     owner_id: int
 
     class Config:

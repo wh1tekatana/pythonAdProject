@@ -11,7 +11,14 @@ from typing import Optional, List
 from fastapi import FastAPI
 from .routers import router
 
-app = FastAPI()
+app = FastAPI(
+    title="My FastAPI Application",
+    description="This is a very fancy project, with auto docs for the API and everything",
+    version="1.0.0",
+    openapi_url="/api/v1/openapi.json",
+    docs_url="/docs", #Путь к docs
+    redoc_url=None
+)
 
 app.include_router(router)
 
