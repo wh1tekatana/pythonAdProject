@@ -172,7 +172,7 @@ def read_advertisement(advertisement_id: int, db: Session = Depends(get_db)):
 
 #ПОЛУЧИТЬ СПИСОК ВСЕХ ОБЬЯВЛЕНИЙ
 @router.get("/advertisements/")
-def read_advertisements(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def read_advertisements(db: Session = Depends(get_db)):
     advertisements = db.query(Advertisement).all()
     return advertisements
 

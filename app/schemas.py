@@ -39,3 +39,4 @@ class AdvertisementOut(BaseModel):
 
     class Config:
         orm_mode = True
+        

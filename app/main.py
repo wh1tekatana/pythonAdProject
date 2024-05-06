@@ -16,9 +16,11 @@ app = FastAPI(
     description="This is a very fancy project, with auto docs for the API and everything",
     version="1.0.0",
     openapi_url="/api/v1/openapi.json",
-    docs_url="/docs", #Путь к docs
+    docs_url="/docs",
     redoc_url=None
 )
+
+
 
 app.include_router(router)
 
