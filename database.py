@@ -7,8 +7,15 @@ import os
 # Загрузка переменных окружения из файла .env
 load_dotenv()
 
-# Получение значения переменной окружения DATABASE_URL
-DATABASE_URL = os.getenv("DATABASE_URL")
+# Получение значений переменных окружения из .env файла
+POSTGRES_PORT = os.getenv("POSTGRES_PORT")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+POSTGRES_USER = os.getenv("POSTGRES_USER")
+POSTGRES_DB = os.getenv("POSTGRES_DB")
+POSTGRES_HOST = os.getenv("POSTGRES_HOST")
+
+# Формирование строки подключения к базе данных
+DATABASE_URL = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
 
 # Проверка, что переменная окружения была прочитана корректно
 if DATABASE_URL is None:
