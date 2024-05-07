@@ -9,7 +9,7 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional, List
 from fastapi import FastAPI
-from .routers import router
+from app.routers import router
 
 app = FastAPI(
     title="My FastAPI Application",
