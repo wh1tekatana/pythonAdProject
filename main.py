@@ -12,8 +12,8 @@ from fastapi import FastAPI
 from app.routers import router
 
 app = FastAPI(
-    title="My FastAPI Application",
-    description="This is a very fancy project, with auto docs for the API and everything",
+    title="Web-сервис доски обьявлений",
+    description="здесь должно быть какое-либо описание веб-сервиса...",
     version="1.0.0",
     openapi_url="/api/v1/openapi.json",
     docs_url="/docs",
