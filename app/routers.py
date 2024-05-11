@@ -1,6 +1,6 @@
 # routers.py
 from urllib.request import Request
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Header, status
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from flask import app
@@ -21,6 +21,7 @@ router = APIRouter()
 
 # Инициализация CryptContext и OAuth2PasswordBearer
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # JWT
@@ -64,6 +65,7 @@ def authenticate_user(db: Session, username: str, password: str):
         return False
     return user
 
+
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
@@ -103,7 +105,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
 
 #ДОБАВИТЬ ОБЬЯВЛЕНИЕ .. ТРЕБУЕТСЯ ТОКЕН
 @router.post("/advertisements/", response_model=AdvertisementBase)
-def create_advertisement(advertisement: AdvertisementBase, db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
+def create_advertisement(advertisement: AdvertisementBase, token: str = Header(None), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Неавторизованный доступ",
@@ -142,7 +144,12 @@ def main():
 
 #УДАЛЕНИЕ ОБЬЯВЛЕНИЯ .. УДАЛИТЬ ОБЬЯВЛЕНИЕ МОЖЕТ ТОЛЬКО СОЗДАТЕЛЬ
 @router.delete("/advertisements/{advertisement_id}")
-def delete_advertisement(advertisement_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def delete_advertisement(
+    advertisement_id: int,
+    token: str = Header(..., description="Authorization token"),
+    db: Session = Depends(get_db)
+):
+    current_user = get_current_user(token, db)
     advertisement = db.query(Advertisement).filter(Advertisement.id == advertisement_id).first()
     if advertisement is None:
         raise HTTPException(status_code=404, detail="Объявление не найдено")
@@ -179,7 +186,13 @@ def read_advertisements(db: Session = Depends(get_db)):
 
 #РЕДАКТИРОВАНИЕ ОБЬЯВЛЕНИЙ .. РЕДАКТИРОВАТЬ МОЖЕТ ТОЛЬКО СОЗДАТЕЛЬ .. ТРЕБУЕТСЯ ТОКЕН
 @router.put("/advertisements/{advertisement_id}", response_model=AdvertisementBase)
-def update_advertisement(advertisement_id: int, updated_advertisement: AdvertisementBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def update_advertisement(
+    advertisement_id: int,
+    updated_advertisement: AdvertisementBase,
+    token: str = Header(..., description="Authorization token"),
+    db: Session = Depends(get_db)
+):
+    current_user = get_current_user(token, db)
     advertisement = db.query(Advertisement).filter(Advertisement.id == advertisement_id).first()
     if advertisement is None:
         raise HTTPException(status_code=404, detail="Объявление не найдено")
